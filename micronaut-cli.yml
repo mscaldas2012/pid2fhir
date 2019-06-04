@@ -1,0 +1,5 @@
+profile: kafka
+defaultPackage: pid2fhir
+---
+testFramework: spek
+sourceLanguage: kotlin
