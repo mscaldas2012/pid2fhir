@@ -1,9 +1,7 @@
 package pid2fhir
 
-import org.junit.Assert.*
-import org.junit.Before
 import ca.uhn.fhir.context.FhirContext
-
+import org.junit.Before
 
 
 class PID2FHIRConverterTest {

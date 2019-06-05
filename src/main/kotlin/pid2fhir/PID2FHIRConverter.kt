@@ -1,6 +1,8 @@
 package pid2fhir
 
 
+import ca.uhn.fhir.context.FhirContext
+import com.fasterxml.jackson.databind.JsonNode
 import io.micronaut.configuration.kafka.streams.ConfiguredStreamBuilder
 import io.micronaut.context.annotation.Factory
 import org.apache.kafka.common.serialization.Serdes
@@ -12,6 +14,9 @@ import java.util.logging.Logger
 import javax.inject.Named
 import javax.inject.Singleton
 import open.HL7PET.tools.HL7ParseUtils
+import org.apache.kafka.common.serialization.Serdes.serdeFrom
+import org.apache.kafka.connect.json.JsonDeserializer
+import org.apache.kafka.connect.json.JsonSerializer
 import org.hl7.fhir.r4.model.*
 import java.time.LocalDate
 import java.time.ZoneId
@@ -30,6 +35,7 @@ import java.util.*
  */
 @Factory
 class PID2FHIRConverter(val appConfig: AppConfig) {
+    val ctx = FhirContext.forR4()
 
     companion object {
         val LOG = Logger.getLogger(PID2FHIRConverter::javaClass.name)
@@ -73,27 +79,27 @@ class PID2FHIRConverter(val appConfig: AppConfig) {
         const val CONTACT_ORGANIZATION_5 = "NK1-41"                // ???
 
         const val COMM_PRIMARY_LANGUAGE = "PID-15"                    //CE - Primary Langauge
-//        const val COMM_LANG_2 = "LAN-2"                     // CE - Language Code
+//        const val COMM_LANG_2 = "LAN-2"                   // CE - Language Code
 
         const val COMM_PREFERRED = "PID-15"                 // CE - Primary Langauge
 
-        const val GENERAL_PRACTITIONER = "PD1-4"            // XCN - Patient Primary Care provider name and ID no. (.1 - ID; 2 - family name; 3 -given Name)
+        const val GENERAL_PRACTITIONER = "PD1-4"              // XCN - Patient Primary Care provider name and ID no. (.1 - ID; 2 - family name; 3 -given Name)
 //        const val MANAGING_ORG_LINK_1 = "PID-3"             // CX - Patient ID
 //        const val MANAGING_ORG_LINK_2 = "MRG-1"             // CX - Prior Patient Identifier List
     }
 
     @Singleton
     @Named("dprp-validator")
-    fun validateParticipant(builder: ConfiguredStreamBuilder): KStream<String, String> {
+    fun validateParticipant(builder: ConfiguredStreamBuilder): KStream<String, JsonNode> {
         LOG.info("AUDIT - PATIENT 2 FHIR  Streamer started")
 
-        //val jsonSerde = Serdes.serdeFrom<JsonNode>(JsonSerializer(), JsonDeserializer())
-        val validationStreams: KStream<String, String> = builder.stream(appConfig.incomingtopic,Consumed.with(Serdes.String(), Serdes.String()))
+        val jsonSerde = serdeFrom<JsonNode>(JsonSerializer(), JsonDeserializer())
+        val validationStreams: KStream<String, JsonNode> = builder.stream(appConfig.incomingtopic,Consumed.with(Serdes.String(), jsonSerde))
 
         validationStreams.map { k, v ->
             println("key: $k; Val: $v")
-            val fhirResource = convert(k, v)
-            KeyValue(k, fhirResource)
+            //val fhirResource = convert(k,v)
+            KeyValue(k, ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(convert(k, v)))
         }
 
         val streams = KafkaStreams(builder.build(), builder.configuration)
