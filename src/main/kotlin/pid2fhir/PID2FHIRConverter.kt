@@ -90,11 +90,11 @@ class PID2FHIRConverter(val appConfig: AppConfig) {
 
     @Singleton
     @Named("dprp-validator")
-    fun validateParticipant(builder: ConfiguredStreamBuilder): KStream<String, JsonNode> {
+    fun validateParticipant(builder: ConfiguredStreamBuilder): KStream<String, String> {
         LOG.info("AUDIT - PATIENT 2 FHIR  Streamer started")
 
         val jsonSerde = serdeFrom<JsonNode>(JsonSerializer(), JsonDeserializer())
-        val validationStreams: KStream<String, JsonNode> = builder.stream(appConfig.incomingtopic,Consumed.with(Serdes.String(), jsonSerde))
+        val validationStreams: KStream<String, String> = builder.stream(appConfig.incomingtopic,Consumed.with(Serdes.String(), Serdes.String()))
 
         validationStreams.map { k, v ->
             println("key: $k; Val: $v")
