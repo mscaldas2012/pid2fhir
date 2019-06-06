@@ -11,3 +11,8 @@ out/
 .project
 .settings
 .classpath
+
+kafka-data
+kafka-logs
+zookeeper-data
+zookeeper-logs
