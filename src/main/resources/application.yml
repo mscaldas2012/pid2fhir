@@ -6,3 +6,14 @@ micronaut:
 kafka:
     bootstrap:
         servers: localhost:9092
+
+    application.id: ${micronaut.application.name}-${random.int}
+    client.id: ${micronaut.application.name}
+    commit.interval.ms: 10000
+    auto.offset.reset: earliest
+
+
+app:
+  id: ${kafka.application.id}
+  incomingtopic: ADT_MESSAGES
+  outgoingtopic: FHIR_PATIENTS

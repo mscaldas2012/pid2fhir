@@ -8,7 +8,21 @@
         </encoder>
     </appender>
 
+    <appender name="FINEST_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>FINEST</level>
+        </filter>
+    </appender>
+
+    <logger name="pid2fhir" additivity="false" level="finest">
+        <appender-ref ref="FINEST_CONSOLE" />
+    </logger>
+
     <root level="info">
         <appender-ref ref="STDOUT" />
     </root>
+
 </configuration>

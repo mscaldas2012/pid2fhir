@@ -17,6 +17,7 @@ import open.HL7PET.tools.HL7ParseUtils
 import org.apache.kafka.common.serialization.Serdes.serdeFrom
 import org.apache.kafka.connect.json.JsonDeserializer
 import org.apache.kafka.connect.json.JsonSerializer
+import org.apache.kafka.streams.StreamsConfig
 import org.hl7.fhir.r4.model.*
 import java.time.LocalDate
 import java.time.ZoneId
@@ -89,25 +90,33 @@ class PID2FHIRConverter(val appConfig: AppConfig) {
     }
 
     @Singleton
-    @Named("dprp-validator")
+    @Named("PATIENT-2-FHIR")
     fun validateParticipant(builder: ConfiguredStreamBuilder): KStream<String, String> {
         LOG.info("AUDIT - PATIENT 2 FHIR  Streamer started")
+        LOG.info("ID: ${appConfig.id}")
+        LOG.info("Incoming Topic: ${appConfig.incomingtopic}")
+        LOG.info("Outgoing Topic ${appConfig.outgoingtopic}")
+
+
+        builder.configuration.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG,   Serdes.String()::class.java)
+        builder.configuration.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String()::class.java)
+
 
         val jsonSerde = serdeFrom<JsonNode>(JsonSerializer(), JsonDeserializer())
-        val validationStreams: KStream<String, String> = builder.stream(appConfig.incomingtopic,Consumed.with(Serdes.String(), Serdes.String()))
+        val adtMesages: KStream<String, String> = builder.stream(appConfig.incomingtopic,Consumed.with(Serdes.String(), Serdes.String()))
 
-        validationStreams.map { k, v ->
-            println("key: $k; Val: $v")
-            //val fhirResource = convert(k,v)
-            KeyValue(k, ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(convert(k, v)))
+        val fhirPatients = adtMesages.map { k, v ->
+            LOG.info("key: $k; Val: $v")
+            val patientRes = convert(k, v)
+            val patientJson = ctx.newJsonParser().encodeResourceToString(patientRes)
+            //val gson = Gson()
+
+            LOG.info("converted:\n$patientRes")
+            KeyValue(k, patientJson)
         }
 
-        val streams = KafkaStreams(builder.build(), builder.configuration)
-        streams.cleanUp()
-        streams.start()
-
-        validationStreams.to(appConfig.outgoingtopic)
-        return validationStreams
+        fhirPatients.to(appConfig.outgoingtopic)
+        return adtMesages
     }
 
     fun preparePhone(hl7Value: String, use: ContactPoint.ContactPointUse): ContactPoint {
@@ -124,13 +133,21 @@ class PID2FHIRConverter(val appConfig: AppConfig) {
 
         val fhirPatient = Patient()
 
-        val id = Identifier()
-        id.value = hl7Parser.getFirstValue(PID_IDENTIFIER)?.get()
-        fhirPatient.addIdentifier(id)
+        val v2Id = hl7Parser.getFirstValue(PID_IDENTIFIER)
+        if (v2Id.isDefined) {
+            val id = Identifier()
+            id.value = v2Id.get()
+            fhirPatient.addIdentifier(id)
+        }
+
 
         val humanName = HumanName()
-        humanName.family = hl7Parser.getFirstValue(PID_LASTNAME)?.get()
-        humanName.addGiven( hl7Parser.getFirstValue(PID_FIRSTNAME)?.get())
+        val v2Family = hl7Parser.getFirstValue(PID_LASTNAME)
+        if (v2Family.isDefined)
+            humanName.family = v2Family.get()
+        val v2Given = hl7Parser.getFirstValue(PID_FIRSTNAME)
+        if (v2Given.isDefined)
+            humanName.addGiven( v2Given.get())
 
         fhirPatient.addName(humanName)
 
@@ -148,10 +165,11 @@ class PID2FHIRConverter(val appConfig: AppConfig) {
         }
 
         val v2Gender = hl7Parser.getFirstValue(PID_GENDER)
-        when (v2Gender.get()?.toLowerCase()) {
-            "male" -> fhirPatient.gender = Enumerations.AdministrativeGender.MALE
-            "female" -> fhirPatient.gender = Enumerations.AdministrativeGender.FEMALE
-        }
+        if (v2Gender.isDefined)
+            when (v2Gender.get()?.toLowerCase()) {
+                "male" -> fhirPatient.gender = Enumerations.AdministrativeGender.MALE
+                "female" -> fhirPatient.gender = Enumerations.AdministrativeGender.FEMALE
+            }
 
         val formatter = DateTimeFormatter.ofPattern(DATE_FORMAT)//, Locale.ENGLISH)
 
@@ -196,10 +214,10 @@ class PID2FHIRConverter(val appConfig: AppConfig) {
         }
 
         val address = Address()
-        address.addLine(hl7Parser.getFirstValue(ADDRESS_LINE_ONE).getOrElse(null))
-        address.city = hl7Parser.getFirstValue(ADDRESS_CITY).getOrElse(null)
-        address.state =hl7Parser.getFirstValue(ADDRESS_STATE).getOrElse(null)
-        address.postalCode = hl7Parser.getFirstValue(ADDRESS_ZIP).getOrElse(null)
+        address.addLine(hl7Parser.getFirstValue(ADDRESS_LINE_ONE).getOrElse { "N/A" })
+        address.city = hl7Parser.getFirstValue(ADDRESS_CITY).getOrElse{"N/A" }
+        address.state =hl7Parser.getFirstValue(ADDRESS_STATE).getOrElse{"N/A" }
+        address.postalCode = hl7Parser.getFirstValue(ADDRESS_ZIP).getOrElse{"N/A" }
         val country = hl7Parser.getFirstValue(ADDRESS_COUNTRY)
         if (country.isDefined)
             address.country = country.get()

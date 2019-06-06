@@ -11,7 +11,5 @@ class AppConfig {
     lateinit var incomingtopic:String
     @NotBlank
     lateinit var outgoingtopic:String
-    @NotBlank
-    lateinit var validatorUrl: String
 
 }

@@ -1,0 +1,15 @@
+##
+## Create Topic:
+##
+docker-compose exec kafka kafka-topics --create --topic ADT_MESSAGES --partitions 1 --replication-factor 1 --zookeeper zookeeper:2181
+
+##
+## Produce Messages:
+##
+docker-compose exec kafka kafka-console-producer --broker-list localhost:9092 --property "parse.key=true" --property "key.separator=:" --topic ADT_MESSAGES
+
+
+##
+## Read Messages:
+##
+docker-compose  exec kafka kafka-console-consumer  --bootstrap-server localhost:9092 --from-beginning --topic FHIR_PATIENTS
