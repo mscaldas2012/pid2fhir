@@ -1,15 +1,21 @@
 ##
 ## Create Topic:
-##
+## (Optional) Run these commands to create beforehand the topics.
+## Usually, kafka will automatically create the topics for you, so this step is optional.
+
 docker-compose exec kafka kafka-topics --create --topic ADT_MESSAGES --partitions 1 --replication-factor 1 --zookeeper zookeeper:2181
+docker-compose exec kafka kafka-topics --create --topic FHIR_PATIENTS --partitions 1 --replication-factor 1 --zookeeper zookeeper:2181
 
 ##
 ## Produce Messages:
-##
-docker-compose exec kafka kafka-console-producer --broker-list localhost:9092 --property "parse.key=true" --property "key.separator=:" --topic ADT_MESSAGES
+## Start a Producer to post messages. For this example you can post a Key and Value separated by a colon - :
+## For this example, provide only the PID segment, since you can't provide the newlines of a Full ADT message.
+## Ex.: PAT-AAAA:PID|||PATID1234^5^M11||JONES^WILLIAM^A^III||19610615|M-||2106-3|1200 N ELM STREET^^GREENSBORO^NC^27401-1020|GL|(919)379-1212|(919)271-3434~(919)277-3114||S||PATID12345001^2^M10|123456789|9-87654^NC
 
+docker-compose exec kafka kafka-console-producer --broker-list localhost:9092 --property "parse.key=true" --property "key.separator=:" --topic ADT_MESSAGE
 
 ##
 ## Read Messages:
-##
+## Use this command to read messages that have been posted to a given topic. In this case, we are listening to FHIR_PATIENTS topic.
+
 docker-compose  exec kafka kafka-console-consumer  --bootstrap-server localhost:9092 --from-beginning --topic FHIR_PATIENTS

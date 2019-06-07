@@ -260,11 +260,11 @@
     </dependencies>
   </dependencyManagement>
   <properties>
-    <jdk.version>1.8</jdk.version>
-    <exec.mainClass>pid2fhir.Application</exec.mainClass>
-    <kotlinVersion>1.2.61</kotlinVersion>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <micronaut.version>1.0.0</micronaut.version>
+    <kotlinVersion>1.2.61</kotlinVersion>
+    <exec.mainClass>pid2fhir.Application</exec.mainClass>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <jdk.version>1.8</jdk.version>
   </properties>
 </project>
 
