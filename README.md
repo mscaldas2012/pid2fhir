@@ -2,18 +2,18 @@
 This project is part of the FHIR in Population Health Ecosystem presentation for HL7 FHIR Dev Days in Redmond, WA
 June 12, 2019.
 
-#Intro
+# Intro
 This project is a simple Kafka Streamer that listens to an incoming topic receiving HL7 ADT messages, extracts patient 
 information and build a FHIR R4 Patient Resource posted at another topic for further processing.
 
-#Requirements
+# Requirements
 At the writing of this documentation, here are the following requirements and versions:
 * Java 8 (tested with Java 1.9.0_102-b14)
 * Docker (tested with Docker 18.09.2)
 * Docker-compose (tested with versin 1.23.2)
 * Maven (tested with 3.3.9)
 
-#Configuration
+# Configuration
 There are two files you might want to check for configuration.
 ## Docker-compose.yml
 This file holds the configuration to run kafak and Zookeeper as docker containers.
@@ -34,7 +34,7 @@ If you have Kafka running somewhere else, you can change teh kafka.bootstrap.ser
 Also, if you would like to change the topic names for either incoming or outgoing topics, feel free to change them on that file.
 ****
 
-#Build
+# Build
 This project uses maven. 
 
 To build the project, run
@@ -56,7 +56,7 @@ or
 
     java -jar target\pid2phir-0.1.jar
     
-#Testing
+# Testing
 Some files are provided for you to be able to test it with minimal resources available.
 Feel free to use a simple ADT file under test\resources\PatientAdmission.hl7 for content. 
 
